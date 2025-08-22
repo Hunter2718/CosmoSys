@@ -12,7 +12,6 @@ jobs:
           source .venv/bin/activate
           pip install pytest
           pytest -q
-
 lint:
   runs-on: ubuntu-latest
   steps:
@@ -24,7 +23,6 @@ lint:
         MATCHES=$(rg -n -f banned_apis.txt --glob '!**/third_party/**' --glob '!**/*.md' | wc -l);
         [ "$MATCHES" -eq 0 ] || (echo "Banned APIs found" && exit 1);
         fi
-
 secrets:
   runs-on: ubuntu-latest
   steps:
