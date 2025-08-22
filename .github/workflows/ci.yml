@@ -1,34 +1,44 @@
 name: ci
 on: [push, pull_request]
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+        with:
+          python-version: '3.12'
       - run: |
           python -m venv .venv
-          source .venv/bin/activate
+          . .venv/bin/activate
           pip install pytest
           pytest -q
-lint:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - run: |
-        echo "Scanning for banned C APIs";
-        if rg -n -f banned_apis.txt --glob '!**/third_party/**' --glob '!**/*.md' || true; then
-        # rg exits 0 if matches found; flip to failure if any real C/C++ files matched
-        MATCHES=$(rg -n -f banned_apis.txt --glob '!**/third_party/**' --glob '!**/*.md' | wc -l);
-        [ "$MATCHES" -eq 0 ] || (echo "Banned APIs found" && exit 1);
-        fi
-secrets:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - run: |
-        echo "Secrets scan";
-        rg -n --hidden --no-ignore -e 'BEGIN (RSA|EC|PRIVATE) KEY' -e '(password|token|secret)\s*=' -e '[A-Za-z0-9_\.-]+@[A-Za-z0-9_-]+\.[A-Za-z\.-]+' || true
-        COUNT=$(rg -n --hidden --no-ignore -e 'BEGIN (RSA|EC|PRIVATE) KEY' -e '(password|token|secret)\s*=' | wc -l);
-        [ "$COUNT" -eq 0 ] || (echo "Potential secrets found" && exit 1)
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Banned C APIs scan
+        run: |
+          echo "Scanning for banned C APIs"
+          MATCHES="$(rg -n -f banned_apis.txt --glob '!**/third_party/**' --glob '!**/*.md' || true)"
+          if [ -n "$MATCHES" ]; then
+            echo "$MATCHES"
+            exit 1
+          fi
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Secrets scan
+        run: |
+          rg -n --hidden --no-ignore -e 'BEGIN (RSA|EC|PRIVATE) KEY' -e '(password|token|secret)\s*=' -e '[A-Za-z0-9_\.-]+@[A-Za-z0-9_-]+\.[A-Za-z\.-]+' || true
+          COUNT="$(rg -n --hidden --no-ignore -e 'BEGIN (RSA|EC|PRIVATE) KEY' -e '(password|token|secret)\s*=' | wc -l)"
+          test "$COUNT" -eq 0
+
