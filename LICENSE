@@ -1,0 +1,10 @@
+CosmoSys Licensing
+
+
+- CosmoKernel (in /kernel): GPL-2.0-only (see LICENSE.kernel). SPDX: GPL-2.0-only
+- Tools, scripts, and non-kernel code: MIT.
+
+
+Source headers:
+- Kernel files: SPDX-License-Identifier: GPL-2.0-only
+- Tools/scripts/non kernel files: SPDX-License-Identifier: MIT
